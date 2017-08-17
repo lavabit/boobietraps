@@ -21,7 +21,7 @@
   unsigned long tiltDebounceDelay = 100;
   bool tiltDebounce = false;
   unsigned long tiltWaitTimer = 0;
-  unsigned long tiltWaitDelay = 120000; // we want the tilt sensor to rest for 2 minutes to consider it "stable"
+  unsigned long tiltWaitDelay = 3000; // we want the tilt sensor to rest for 2 minutes to consider it "stable"
   bool tiltWait = false;
   
   int chassisPin = 5;
@@ -70,18 +70,21 @@ void loop() {
         }
     }
 
-    // if the tilt state changes, and we are not in the debounce period, proceedd to check status
-    if ( (tiltDebounce == false) && (tiltPinState != lastTiltPinState) ) {
+    // if we are not in the debounce period, proceed to check status
+    // we do not care if the state changed; we want to know if tilt switch still alarms to reset rest timer.
+    if ( (tiltDebounce == false) ) { 
         tiltLastDebounce = millis();
         tiltDebounce = true;
 
-        // if pin is LOW, check if we are in the rest time window..
+        // if pin is LOW, check if we are in the rest time window.
+        // if not in the rest window, raise an alert.
         // if we are already in the rest wait period, don't bother making a duplicate log
         if (tiltPinState == LOW) {
            if (tiltWait == false) {
                Serial.write("Tilt Event Detected!\n");
-               tiltWait = true;
            }
+           
+           tiltWait = true; // always going to be set when tilt pin state is low
            // if the tilt sensor is still triggered, restart the rest wait period timer.
            tiltWaitTimer = millis();
         }
@@ -107,4 +110,14 @@ void loop() {
         Serial.write("Tilt Level Restored.\n");
     }
 
+    // if millis() has rolled over, it will be apparent if it is smaller than any value we have initialized.
+    // if that happens, we want to set our timers back to zero. Small scall debounces fail in small cases,
+    // but this fails Secure in making alerts more prevalent if it happens during a state change.
+
+    if (millis() < tiltLastDebounce)
+        tiltLastDebounce = 0;
+    if (millis() < chassisLastDebounce)
+        chassisLastDebounce = 0;
+    if (millis() < tiltWaitTimer)
+        tiltWaitTimer = 0;
 }
