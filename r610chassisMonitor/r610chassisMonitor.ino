@@ -21,7 +21,7 @@
   unsigned long tiltDebounceDelay = 100;
   bool tiltDebounce = false;
   unsigned long tiltWaitTimer = 0;
-  unsigned long tiltWaitDelay = 3000; // we want the tilt sensor to rest for 2 minutes to consider it "stable"
+  unsigned long tiltWaitDelay = 120000; // we want the tilt sensor to rest for 2 minutes to consider it "stable"
   bool tiltWait = false;
   
   int chassisPin = 5;
